@@ -7,3 +7,10 @@ aws dynamodb scan --table-name DirectMessages --endpoint-url http://localhost:80
 #command to view all tables
 aws dynamodb list-tables --endpoint-url http://localhost:8000
 
+
+#command to send a new DirectMessages
+http POST http://localhost:8080/message/<fromUsername>/<toUsername>/
+
+requirements
+dynamodb
+java
