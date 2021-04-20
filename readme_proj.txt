@@ -9,8 +9,10 @@ aws dynamodb list-tables --endpoint-url http://localhost:8000
 
 
 #command to send a new DirectMessages
-http POST http://localhost:8080/message/<fromUsername>/<toUsername>/
+curl -H "Content-Type: application/json" -d '{"message":"Hello World"}' -X POST http://localhost:8080/message/<fromUser>/<toUser>/
+
 
 requirements
 dynamodb
 java
+curl
