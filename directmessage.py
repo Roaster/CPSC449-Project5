@@ -33,8 +33,6 @@ def createMessage(messageId, fromUser, text, toUser, timestamp, dynamodb=None):
     if not dynamodb:
         dynamodb = boto3.resource('dynamodb', endpoint_url="http://localhost:8000")
 
-    
-
     table = dynamodb.Table('DirectMessages')
     table2 = dynamodb.Table('toUsers')
 
@@ -57,7 +55,6 @@ def createMessage(messageId, fromUser, text, toUser, timestamp, dynamodb=None):
         }
     )
 
-    
     return response
 
 
@@ -79,13 +76,14 @@ def replyMessage(messagedId, message, dynamodb=None):
     myDate = datetime.now()
     myDate = str(myDate)
     
-
+    #added the replyId to the others
     myReplies.append(messageId)
 
     createMessage(messageId, fromUser, message, toUser, myDate)
     update_message(response['Item']['messageId'], myReplies)
     
 
+#Needed to update changed entries
 def update_message(messageId, replyId, dynamodb=None):
     if not dynamodb:
         dynamodb = boto3.resource('dynamodb', endpoint_url="http://localhost:8000")
@@ -182,7 +180,30 @@ def create_movie_table(dynamodb=None):
     
     return table
 
+
+# listRepliesTo(messageId)
+def getMessagesId(messageId, dynamodb=None):
+    if not dynamodb:
+        dynamodb = boto3.resource('dynamodb', endpoint_url="http://localhost:8000")
+
+    table = dynamodb.Table('DirectMessages')
+    response = table.get_item(Key={'messageId': messageId})
+
+    print(response['Item']['replyId'])
+    myResponse = []
+    for id in response['Item']['replyId']:
+        x = (table.get_item(Key={'messageId': id}))
+        myResponse.append(x['Item']['text'])
+
+    for message in myResponse:
+        print(message)
+   
+  
+   
+
+
 #gets all the messages from the given user. Uses PK fromUser. Prints them to console
+#
 def getMessages(fromUser, dynamodb=None):
     if not dynamodb:
         dynamodb = boto3.resource('dynamodb', endpoint_url="http://localhost:8000")
@@ -215,9 +236,9 @@ if __name__ == '__main__':
     #delete_table()
     #movie_table = create_movie_table()
     
-    replyMessage("bb15e213-57b2-4178-a4c5-b610f4313335","I am replying to you!")
-    replyMessage("bb15e213-57b2-4178-a4c5-b610f4313335","Please work!")
-
+    #replyMessage("bb15e213-57b2-4178-a4c5-b610f4313335","I am replying to you!")
+    #replyMessage("bb15e213-57b2-4178-a4c5-b610f4313335","Please work!")
+    getMessagesId("bb15e213-57b2-4178-a4c5-b610f4313335")
 
     run(host='localhost', port=8080, debug=True)
     #message = testmethod('andy', 'test')
