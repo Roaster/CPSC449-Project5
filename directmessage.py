@@ -1,5 +1,6 @@
 import boto3
 from bottle import route, run, post, get, request
+from bottle import response as rs
 import uuid
 from datetime import datetime
 from botocore.exceptions import ClientError
@@ -8,23 +9,58 @@ from boto3.dynamodb.conditions import Key, Attr
 import json
 
 
-#def sendMessage()
+
 @post('/message/<fromUsername>/<toUsername>/')
 def testmethod(fromUsername, toUsername):
     
     data = request.json
-    print(data['message'])
+
     messageId = str(uuid.uuid4())
-    #messageId = '1'
     myDate = datetime.now()
     myDate = str(myDate)
     message = createMessage(messageId, fromUsername, data['message'], toUsername, myDate, dynamodb=None)
 
+    rs.status = 201
+
+    return rs
 
 
-#@get('/message/replies/<messageId>')
-#def getReplies(messageId):
+@post ('/message/<messageId>')
+def replyTo(messageId):
 
+    data = request.json
+    replyMessage(messageId, data['message'])
+     
+    rs.status = 201 
+
+    return rs
+    
+
+#listDirectMessagesFor(username)
+@get ('/message/<toUser>')
+def getDirectMessages(toUser):
+
+    messages = getMessages(toUser)
+   
+    rs.body = json.dumps(messages)
+    rs.set_header("Content-Type", "application/json")
+   
+    return bottle.response
+
+
+#listRepliesTo(messageId)
+@get ('/message/id/<messageId>')
+def getRepliesTo(messageId):
+
+    replies = getMessagesId(messageId)
+    if replies == []:
+        rs.body = "There are no replies."
+    else:
+        rs.body = json.dumps(replies)
+        rs.set_header("Content-Type", "application/json")
+    
+    return rs
+    
 
 ###############################################################################
 #                           Dynamodb methods
@@ -55,6 +91,7 @@ def createMessage(messageId, fromUser, text, toUser, timestamp, dynamodb=None):
         }
     )
 
+    
     return response
 
 
@@ -83,7 +120,7 @@ def replyMessage(messagedId, message, dynamodb=None):
     update_message(response['Item']['messageId'], myReplies)
     
 
-#Needed to update changed entries
+#Update an entry to add more replyIds
 def update_message(messageId, replyId, dynamodb=None):
     if not dynamodb:
         dynamodb = boto3.resource('dynamodb', endpoint_url="http://localhost:8000")
@@ -104,8 +141,9 @@ def update_message(messageId, replyId, dynamodb=None):
     return response
 
     
-
-
+##########################################################
+#Get replies for a messageId
+#Does not get used?
 def getReplies(messagedId, dynamodb=None):
     if not dynamodb:
         dynamodb = boto3.resource('dynamodb', endpoint_url="http://localhost:8000")
@@ -121,10 +159,10 @@ def getReplies(messagedId, dynamodb=None):
     #items = response['Items']
     #print(items)
 
-
+##########################################################
 
 #Method for creating a table
-def create_movie_table(dynamodb=None):
+def create_tables(dynamodb=None):
     if not dynamodb:
         dynamodb = boto3.resource('dynamodb', endpoint_url="http://localhost:8000")
 
@@ -187,34 +225,52 @@ def getMessagesId(messageId, dynamodb=None):
         dynamodb = boto3.resource('dynamodb', endpoint_url="http://localhost:8000")
 
     table = dynamodb.Table('DirectMessages')
+
+    
     response = table.get_item(Key={'messageId': messageId})
+    
+    
+    
+        
+    try:
+        print(response['Item']['replyId'])
+        myResponse = []
+        for id in response['Item']['replyId']:
+            x = (table.get_item(Key={'messageId': id}))
+            myResponse.append(x['Item'])
+    except:
+        return []
 
-    print(response['Item']['replyId'])
-    myResponse = []
-    for id in response['Item']['replyId']:
-        x = (table.get_item(Key={'messageId': id}))
-        myResponse.append(x['Item']['text'])
 
-    for message in myResponse:
-        print(message)
+    return myResponse
    
   
    
 
 
 #gets all the messages from the given user. Uses PK fromUser. Prints them to console
-#
-def getMessages(fromUser, dynamodb=None):
+# listDirectMessagesFor(username)
+def getMessages(toUser, dynamodb=None):
     if not dynamodb:
         dynamodb = boto3.resource('dynamodb', endpoint_url="http://localhost:8000")
 
-    table = dynamodb.Table('DirectMessages')
+    table = dynamodb.Table('toUsers')
+    table2 = dynamodb.Table('DirectMessages')
 
     response = table.query(
-        KeyConditionExpression=Key('fromUser').eq(fromUser)
+        KeyConditionExpression=Key('toUser').eq(toUser)
     )
-    items = response['Items']
-    print(items)
+    messages = []
+    for item in response['Items']:
+
+        text = table2.query(KeyConditionExpression=Key('messageId').eq(item['messageId']))
+        print(text['Items'])
+        messages.append(text['Items'])
+
+    return messages
+
+    
+
 
 #Method for deleting tables
 def delete_table(dynamodb=None):
@@ -234,11 +290,13 @@ def delete_table(dynamodb=None):
 if __name__ == '__main__':
     #create table
     #delete_table()
-    #movie_table = create_movie_table()
+    #movie_table = create_tables()
     
     #replyMessage("bb15e213-57b2-4178-a4c5-b610f4313335","I am replying to you!")
     #replyMessage("bb15e213-57b2-4178-a4c5-b610f4313335","Please work!")
-    getMessagesId("bb15e213-57b2-4178-a4c5-b610f4313335")
+    #getMessagesId("bb15e213-57b2-4178-a4c5-b610f4313335")
+    #getMessages("Brandon")
+
 
     run(host='localhost', port=8080, debug=True)
     #message = testmethod('andy', 'test')
