@@ -14,11 +14,13 @@ import json
 def testmethod(fromUsername, toUsername):
     
     data = request.json
+    quickReplies = data['quickReplies']
 
     messageId = str(uuid.uuid4())
     myDate = datetime.now()
     myDate = str(myDate)
-    message = createMessage(messageId, fromUsername, data['message'], toUsername, myDate, dynamodb=None)
+
+    message = createMessage(messageId, fromUsername, data['message'], toUsername, myDate, quickReplies, dynamodb=None)
 
     rs.status = 201
 
@@ -26,11 +28,30 @@ def testmethod(fromUsername, toUsername):
 
 
 @post ('/message/<messageId>')
-def replyTo(messageId):
+def replyTo(messageId, dynamodb=None):
+    if not dynamodb:
+        dynamodb = boto3.resource('dynamodb', endpoint_url="http://localhost:8000")
 
+    table = dynamodb.Table('DirectMessages')
     data = request.json
-    replyMessage(messageId, data['message'])
-     
+       
+    #first get message details
+    response = table.get_item(Key={'messageId': messageId})
+    if len(response['Item']['quickReply']) > 0:
+        try:
+            message = response['Item']['quickReply'][int(data['message']) -1]
+            print(message)
+        except:
+            message = data['message']
+
+    try: 
+        quickReplies = data['quickReplies']
+    except: 
+        quickReplies = []
+
+    replyMessage(messageId, message, quickReplies)
+
+    
     rs.status = 201 
 
     return rs
@@ -45,7 +66,7 @@ def getDirectMessages(toUser):
     rs.body = json.dumps(messages)
     rs.set_header("Content-Type", "application/json")
    
-    return bottle.response
+    return rs
 
 
 #listRepliesTo(messageId)
@@ -65,7 +86,7 @@ def getRepliesTo(messageId):
 ###############################################################################
 #                           Dynamodb methods
 
-def createMessage(messageId, fromUser, text, toUser, timestamp, dynamodb=None):
+def createMessage(messageId, fromUser, text, toUser, timestamp, quickReplies, dynamodb=None):
     if not dynamodb:
         dynamodb = boto3.resource('dynamodb', endpoint_url="http://localhost:8000")
 
@@ -80,7 +101,7 @@ def createMessage(messageId, fromUser, text, toUser, timestamp, dynamodb=None):
             'toUser': toUser,
             'timestamp': timestamp,
             'replyId' : [],
-            'quickReply': []
+            'quickReply': quickReplies
         }
     )
 
@@ -95,7 +116,7 @@ def createMessage(messageId, fromUser, text, toUser, timestamp, dynamodb=None):
     return response
 
 
-def replyMessage(messagedId, message, dynamodb=None):
+def replyMessage(messagedId, message, quickReplies, dynamodb=None):
     if not dynamodb:
         dynamodb = boto3.resource('dynamodb', endpoint_url="http://localhost:8000")
 
@@ -104,9 +125,9 @@ def replyMessage(messagedId, message, dynamodb=None):
 
     response = table.get_item(Key={'messageId': messagedId})
 
-    toUser = response['Item']['toUser']
+    fromUser = response['Item']['toUser']
 
-    fromUser = response['Item']['fromUser']
+    toUser = response['Item']['fromUser']
     myReplies = response['Item']['replyId']
 
     messageId = str(uuid.uuid4())
@@ -116,7 +137,8 @@ def replyMessage(messagedId, message, dynamodb=None):
     #added the replyId to the others
     myReplies.append(messageId)
 
-    createMessage(messageId, fromUser, message, toUser, myDate)
+    createMessage(messageId, fromUser, message, toUser, myDate, quickReplies)
+
     update_message(response['Item']['messageId'], myReplies)
     
 
@@ -264,7 +286,7 @@ def getMessages(toUser, dynamodb=None):
     for item in response['Items']:
 
         text = table2.query(KeyConditionExpression=Key('messageId').eq(item['messageId']))
-        print(text['Items'])
+        #print(text['Items'])
         messages.append(text['Items'])
 
     return messages

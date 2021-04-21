@@ -10,7 +10,7 @@ aws dynamodb list-tables --endpoint-url http://localhost:8000
 
 #command to send a new DirectMessage
 curl -H "Content-Type: application/json" -d '{"message":"Hello World"}' -X POST http://localhost:8080/message/<fromUser>/<toUser>/
-
+curl -H "Content-Type: application/json" -d '{"message":"Hello World", "quickReplies":["Hello!", "Goodbye!"]}' -X POST http://localhost:8080/message/<fromUser>/<toUser>/
 
 #command to reply to a directmessage
 curl -H "Content-Type: application/json" -d '{"message":"I am replying from the endpoint!"}' -X POST http://localhost:8080/message/<messageId>
