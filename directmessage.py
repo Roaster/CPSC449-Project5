@@ -62,6 +62,62 @@ def replyTo(messageId, dynamodb=None):
 def getDirectMessages(toUser):
 
     messages = getMessages(toUser)
+   
+    rs.body = json.dumps(messages)
+    rs.set_header("Content-Type", "application/json")
+   
+    return rs
+
+
+#listRepliesTo(messageId)
+@get ('/message/id/<messageId>')
+def getRepliesTo(messageId):
+
+    replies = getMessagesId(messageId)
+    if replies == []:
+        rs.body = "There are no replies."
+    else:
+        rs.body = json.dumps(replies)
+        rs.set_header("Content-Type", "application/json")
+    
+    return rs
+    
+
+@post ('/message/<messageId>')
+def replyTo(messageId, dynamodb=None):
+    if not dynamodb:
+        dynamodb = boto3.resource('dynamodb', endpoint_url="http://localhost:8000")
+
+    table = dynamodb.Table('DirectMessages')
+    data = request.json
+       
+    #first get message details
+    response = table.get_item(Key={'messageId': messageId})
+    if len(response['Item']['quickReply']) > 0:
+        try:
+            message = response['Item']['quickReply'][int(data['message']) -1]
+            print(message)
+        except:
+            message = data['message']
+
+    try: 
+        quickReplies = data['quickReplies']
+    except: 
+        quickReplies = []
+
+    replyMessage(messageId, message, quickReplies)
+
+    
+    rs.status = 201 
+
+    return rs
+    
+
+#listDirectMessagesFor(username)
+@get ('/message/<toUser>')
+def getDirectMessages(toUser):
+
+    messages = getMessages(toUser)
     if messages is False:
         rs.status = 500
         return rs
@@ -186,12 +242,127 @@ def getReplies(messagedId, dynamodb=None):
 
 ##########################################################
 
+#Method for creating a table
+def create_tables(dynamodb=None):
+    if not dynamodb:
+        dynamodb = boto3.resource('dynamodb', endpoint_url="http://localhost:8000")
+
+    table = dynamodb.create_table(
+        TableName='DirectMessages',
+        KeySchema=[
+            {
+                'AttributeName': 'messageId',
+                'KeyType': 'HASH'  # Partition key
+            }
+        ],
+        AttributeDefinitions=[
+            {
+                'AttributeName': 'messageId',
+                'AttributeType': 'S'
+            }
+            
+        ],
+        ProvisionedThroughput={
+            'ReadCapacityUnits': 10,
+            'WriteCapacityUnits': 10
+        }
+    )
+
+    table = dynamodb.create_table(
+        TableName='toUsers',
+        KeySchema=[
+            {
+                'AttributeName': 'toUser',
+                'KeyType': 'HASH'  # Partition key
+            },
+            {
+                'AttributeName': 'messageId',
+                'KeyType': 'RANGE'  # Partition key
+            }
+        ],
+        AttributeDefinitions=[
+            {
+                'AttributeName': 'toUser',
+                'AttributeType': 'S'
+            },
+            {
+                'AttributeName': 'messageId',
+                'AttributeType': 'S'
+            }
+            
+        ],
+        ProvisionedThroughput={
+            'ReadCapacityUnits': 10,
+            'WriteCapacityUnits': 10
+        }
+    )
+    
+    return table
+  
+  
 # listRepliesTo(messageId)
 def getMessagesId(messageId, dynamodb=None):
     if not dynamodb:
         dynamodb = boto3.resource('dynamodb', endpoint_url="http://localhost:8000")
 
     table = dynamodb.Table('DirectMessages')
+
+    
+    response = table.get_item(Key={'messageId': messageId})
+    
+    
+    
+        
+    try:
+        print(response['Item']['replyId'])
+        myResponse = []
+        for id in response['Item']['replyId']:
+            x = (table.get_item(Key={'messageId': id}))
+            myResponse.append(x['Item'])
+    except:
+        return []
+
+
+    return myResponse
+   
+  
+   
+
+
+#gets all the messages from the given user. Uses PK fromUser. Prints them to console
+# listDirectMessagesFor(username)
+def getMessages(toUser, dynamodb=None):
+    if not dynamodb:
+        dynamodb = boto3.resource('dynamodb', endpoint_url="http://localhost:8000")
+
+    table = dynamodb.Table('toUsers')
+    table2 = dynamodb.Table('DirectMessages')
+
+    response = table.query(
+        KeyConditionExpression=Key('toUser').eq(toUser)
+    )
+    messages = []
+    for item in response['Items']:
+
+        text = table2.query(KeyConditionExpression=Key('messageId').eq(item['messageId']))
+        #print(text['Items'])
+        messages.append(text['Items'])
+
+    return messages
+
+    
+
+
+#Method for deleting tables
+def delete_table(dynamodb=None):
+
+    if not dynamodb:
+        dynamodb = boto3.resource('dynamodb', endpoint_url="http://localhost:8000")
+
+    table = dynamodb.Table('DirectMessages')
+    table2 = dynamodb.Table('toUsers')
+    table.delete()
+    table2.delete()
 
     
     response = table.get_item(Key={'messageId': messageId})
@@ -243,6 +414,7 @@ def getMessages(toUser, dynamodb=None):
 #                           Main method
 
 if __name__ == '__main__':
+
     #replyMessage("bb15e213-57b2-4178-a4c5-b610f4313335","I am replying to you!")
     #replyMessage("bb15e213-57b2-4178-a4c5-b610f4313335","Please work!")
     #getMessagesId("bb15e213-57b2-4178-a4c5-b610f4313335")
@@ -250,4 +422,17 @@ if __name__ == '__main__':
 
 
     run(host='localhost', port=8080, debug=True)
+
+    #print("Table status:", movie_table.table_status
+    #message = testmethod('andy', 'test')
+    #delete table
+    
+    #to test this, create messages using testmethod above. It will print all messages created by given fromUser
+    #getMessages('andy')
+    #if getMessages:
+     #   print("Get message succeeded:")
+      #  pprint(getMessages, sort_dicts=False)
+    #
+    
     #print("Table status:", movie_table.table_status)
+
