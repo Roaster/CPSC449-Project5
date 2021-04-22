@@ -1,3 +1,9 @@
+1. To start all services navigate to the correct directory then execute:
+    foreman start -e settings.env -f Procfile -p 8080
+
+
+
+
 #command to start dynamodb
 java -Djava.library.path=./DynamoDBLocal_lib -jar DynamoDBLocal.jar -sharedDb
 
@@ -25,6 +31,6 @@ curl -X GET http://localhost:8080/message/id/<messageId>
 
 
 requirements
-dynamodb
+dynamodbjava -Djava.library.path=./DynamoDBLocal_lib -jar DynamoDBLocal.jar -sharedDb
 java
 curl

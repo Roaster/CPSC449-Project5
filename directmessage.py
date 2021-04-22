@@ -306,13 +306,8 @@ def getMessagesId(messageId, dynamodb=None):
         dynamodb = boto3.resource('dynamodb', endpoint_url="http://localhost:8000")
 
     table = dynamodb.Table('DirectMessages')
-
-    
     response = table.get_item(Key={'messageId': messageId})
-    
-    
-    
-        
+      
     try:
         print(response['Item']['replyId'])
         myResponse = []
@@ -364,27 +359,8 @@ def delete_table(dynamodb=None):
     table.delete()
     table2.delete()
 
+    return 
     
-    response = table.get_item(Key={'messageId': messageId})
-    
-    
-    
-        
-    try:
-        print(response['Item']['replyId'])
-        myResponse = []
-        for id in response['Item']['replyId']:
-            x = (table.get_item(Key={'messageId': id}))
-            myResponse.append(x['Item'])
-    except:
-        return []
-
-
-    return myResponse
-   
-  
-   
-
 
 #gets all the messages from the given user. Uses PK fromUser. Prints them to console
 # listDirectMessagesFor(username)
@@ -404,7 +380,7 @@ def getMessages(toUser, dynamodb=None):
     for item in response['Items']:
 
         text = table2.query(KeyConditionExpression=Key('messageId').eq(item['messageId']))
-        #print(text['Items'])
+
         messages.append(text['Items'])
 
     return messages
@@ -415,24 +391,6 @@ def getMessages(toUser, dynamodb=None):
 
 if __name__ == '__main__':
 
-    #replyMessage("bb15e213-57b2-4178-a4c5-b610f4313335","I am replying to you!")
-    #replyMessage("bb15e213-57b2-4178-a4c5-b610f4313335","Please work!")
-    #getMessagesId("bb15e213-57b2-4178-a4c5-b610f4313335")
-    #getMessages("Brandon")
-
 
     run(host='localhost', port=8080, debug=True)
-
-    #print("Table status:", movie_table.table_status
-    #message = testmethod('andy', 'test')
-    #delete table
-    
-    #to test this, create messages using testmethod above. It will print all messages created by given fromUser
-    #getMessages('andy')
-    #if getMessages:
-     #   print("Get message succeeded:")
-      #  pprint(getMessages, sort_dicts=False)
-    #
-    
-    #print("Table status:", movie_table.table_status)
 
