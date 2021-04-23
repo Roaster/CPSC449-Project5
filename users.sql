@@ -1,0 +1,18 @@
+PRAGMA foreign_keys=OFF;
+BEGIN TRANSACTION;
+CREATE TABLE users (username text primary key, email text, password text);
+INSERT INTO users VALUES('BSmith','BSmith@csu.fullerton.edu','notpassword');
+INSERT INTO users VALUES('Brandon','b@csu.fullerton.edu','password');
+INSERT INTO users VALUES('Brad','brad@csu.fullerton.edu','notpassword');
+INSERT INTO users VALUES('nodnarB','nodnarb@csu.fullerton.edu','wordpass');
+INSERT INTO users VALUES('CMan98','charlie@csu.fullerton.edu','helloworld');
+INSERT INTO users VALUES('Charlie','c@csu.fullerton.edu','12345');
+INSERT INTO users VALUES('GamerMan','gman99@csu.fullerton.edu','wow12345');
+CREATE TABLE follows (id INTEGER AUTO INCREMENT, user1 TEXT, user2 TEXT, PRIMARY KEY(id), FOREIGN KEY (user1) REFERENCES users (username), FOREIGN KEY (user2) REFERENCES users (username));
+INSERT INTO follows VALUES(NULL,'Brandon','Charlie');
+INSERT INTO follows VALUES(NULL,'Brandon','BSmith');
+INSERT INTO follows VALUES(NULL,'RandomDude','Tester');
+INSERT INTO follows VALUES(NULL,'RandomDude','Brandon');
+INSERT INTO follows VALUES(NULL,'RandomDude','Brad');
+INSERT INTO follows VALUES(NULL,'Charlie','Brandon');
+COMMIT;

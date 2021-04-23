@@ -1,6 +1,6 @@
 import boto3
 from datetime import datetime
-from main import replyMessage
+from directmessage import replyMessage
 
 def create_tables(dynamodb=None):
     if not dynamodb:
@@ -181,10 +181,13 @@ def filltables(dynamodb=None):
             }
 
         )
-replyMessage('2', '', '0')
-replyMessage('3', 'General Kenobi!', '')
+    replyMessage('2', '', '0')
+    replyMessage('3', 'General Kenobi!', '')
 
+
+
+if __name__ == '__main__':
 #create tables then fill those tables, uncomment to delete
-#create_tables()
-filltables()
-#delete_table()
+    create_tables()
+    filltables()   
+    #delete_table()

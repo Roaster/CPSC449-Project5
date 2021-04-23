@@ -1,3 +1,30 @@
+1. To start all services(users, timelines and directmessages) navigate to the correct directory then execute:
+    foreman start -e settings.env -f Procfile -p 8080
+
+2. The services are now available for requests.
+
+    sendDirectMessage(to, from, message, quickReplies=None)
+
+    curl -H "Content-Type: application/json" -d '{"message":"Hello World", "quickReplies":[]}' -X POST http://localhost:8080/message/<fromUser>/<toUser>/
+
+
+    replyToDirectMessage(messageId, message)
+
+    curl -H "Content-Type: application/json" -d '{"message":"I am replying from the endpoint!"}' -X POST http://localhost:8080/message/<messageId>
+
+
+    listDirectMessagesFor(username)
+
+    curl -X GET http://localhost:8080/message/<username>
+
+
+    listRepliesTo(messageId)
+
+    curl -X GET http://localhost:8080/message/id/<messageId>
+
+
+
+
 #command to start dynamodb
 java -Djava.library.path=./DynamoDBLocal_lib -jar DynamoDBLocal.jar -sharedDb
 
@@ -25,6 +52,6 @@ curl -X GET http://localhost:8080/message/id/<messageId>
 
 
 requirements
-dynamodb
+dynamodbjava -Djava.library.path=./DynamoDBLocal_lib -jar DynamoDBLocal.jar -sharedDb
 java
 curl

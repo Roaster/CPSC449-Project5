@@ -9,7 +9,8 @@ from boto3.dynamodb.conditions import Key, Attr
 import json
 
 
-
+#sendDirectMessage(to, from, message, quickReplies=None)
+#Sends a DM to a user. The API call may or may not include a list of quickReplies.
 @post('/message/<fromUsername>/<toUsername>/')
 def testmethod(fromUsername, toUsername):
     
@@ -26,7 +27,9 @@ def testmethod(fromUsername, toUsername):
 
     return rs
 
-
+#replyToDirectMessage(messageId, message)
+#Replies to a DM. The message may either be text or a quick-reply number. If the message parameter is a quick-reply number, 
+#it must have been in response to a  messageId that included a quick-replies field.
 @post ('/message/<messageId>')
 def replyTo(messageId, dynamodb=None):
     if not dynamodb:
@@ -43,6 +46,8 @@ def replyTo(messageId, dynamodb=None):
             print(message)
         except:
             message = data['message']
+    else: 
+        message = data['message']
 
     try: 
         quickReplies = data['quickReplies']
@@ -56,64 +61,8 @@ def replyTo(messageId, dynamodb=None):
 
     return rs
     
-
 #listDirectMessagesFor(username)
-@get ('/message/<toUser>')
-def getDirectMessages(toUser):
-
-    messages = getMessages(toUser)
-   
-    rs.body = json.dumps(messages)
-    rs.set_header("Content-Type", "application/json")
-   
-    return rs
-
-
-#listRepliesTo(messageId)
-@get ('/message/id/<messageId>')
-def getRepliesTo(messageId):
-
-    replies = getMessagesId(messageId)
-    if replies == []:
-        rs.body = "There are no replies."
-    else:
-        rs.body = json.dumps(replies)
-        rs.set_header("Content-Type", "application/json")
-    
-    return rs
-    
-
-@post ('/message/<messageId>')
-def replyTo(messageId, dynamodb=None):
-    if not dynamodb:
-        dynamodb = boto3.resource('dynamodb', endpoint_url="http://localhost:8000")
-
-    table = dynamodb.Table('DirectMessages')
-    data = request.json
-       
-    #first get message details
-    response = table.get_item(Key={'messageId': messageId})
-    if len(response['Item']['quickReply']) > 0:
-        try:
-            message = response['Item']['quickReply'][int(data['message']) -1]
-            print(message)
-        except:
-            message = data['message']
-
-    try: 
-        quickReplies = data['quickReplies']
-    except: 
-        quickReplies = []
-
-    replyMessage(messageId, message, quickReplies)
-
-    
-    rs.status = 201 
-
-    return rs
-    
-
-#listDirectMessagesFor(username)
+#Lists the DMs that a user has received.
 @get ('/message/<toUser>')
 def getDirectMessages(toUser):
 
@@ -128,6 +77,7 @@ def getDirectMessages(toUser):
     return rs
 
 
+
 #listRepliesTo(messageId)
 @get ('/message/id/<messageId>')
 def getRepliesTo(messageId):
@@ -140,6 +90,14 @@ def getRepliesTo(messageId):
         rs.set_header("Content-Type", "application/json")
     
     return rs
+    
+
+
+
+
+
+
+
     
 
 ###############################################################################
@@ -306,13 +264,8 @@ def getMessagesId(messageId, dynamodb=None):
         dynamodb = boto3.resource('dynamodb', endpoint_url="http://localhost:8000")
 
     table = dynamodb.Table('DirectMessages')
-
-    
     response = table.get_item(Key={'messageId': messageId})
-    
-    
-    
-        
+      
     try:
         print(response['Item']['replyId'])
         myResponse = []
@@ -364,27 +317,8 @@ def delete_table(dynamodb=None):
     table.delete()
     table2.delete()
 
+    return 
     
-    response = table.get_item(Key={'messageId': messageId})
-    
-    
-    
-        
-    try:
-        print(response['Item']['replyId'])
-        myResponse = []
-        for id in response['Item']['replyId']:
-            x = (table.get_item(Key={'messageId': id}))
-            myResponse.append(x['Item'])
-    except:
-        return []
-
-
-    return myResponse
-   
-  
-   
-
 
 #gets all the messages from the given user. Uses PK fromUser. Prints them to console
 # listDirectMessagesFor(username)
@@ -404,7 +338,7 @@ def getMessages(toUser, dynamodb=None):
     for item in response['Items']:
 
         text = table2.query(KeyConditionExpression=Key('messageId').eq(item['messageId']))
-        #print(text['Items'])
+
         messages.append(text['Items'])
 
     return messages
@@ -415,24 +349,6 @@ def getMessages(toUser, dynamodb=None):
 
 if __name__ == '__main__':
 
-    #replyMessage("bb15e213-57b2-4178-a4c5-b610f4313335","I am replying to you!")
-    #replyMessage("bb15e213-57b2-4178-a4c5-b610f4313335","Please work!")
-    #getMessagesId("bb15e213-57b2-4178-a4c5-b610f4313335")
-    #getMessages("Brandon")
-
 
     run(host='localhost', port=8080, debug=True)
-
-    #print("Table status:", movie_table.table_status
-    #message = testmethod('andy', 'test')
-    #delete table
-    
-    #to test this, create messages using testmethod above. It will print all messages created by given fromUser
-    #getMessages('andy')
-    #if getMessages:
-     #   print("Get message succeeded:")
-      #  pprint(getMessages, sort_dicts=False)
-    #
-    
-    #print("Table status:", movie_table.table_status)
 
