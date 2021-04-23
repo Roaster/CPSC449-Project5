@@ -189,5 +189,5 @@ def filltables(dynamodb=None):
 if __name__ == '__main__':
 #create tables then fill those tables, uncomment to delete
     create_tables()
-    filltables()
-#delete_table()
+    filltables()   
+    #delete_table()

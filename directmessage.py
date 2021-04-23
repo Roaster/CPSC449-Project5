@@ -9,7 +9,8 @@ from boto3.dynamodb.conditions import Key, Attr
 import json
 
 
-
+#sendDirectMessage(to, from, message, quickReplies=None)
+#Sends a DM to a user. The API call may or may not include a list of quickReplies.
 @post('/message/<fromUsername>/<toUsername>/')
 def testmethod(fromUsername, toUsername):
     
@@ -26,7 +27,9 @@ def testmethod(fromUsername, toUsername):
 
     return rs
 
-
+#replyToDirectMessage(messageId, message)
+#Replies to a DM. The message may either be text or a quick-reply number. If the message parameter is a quick-reply number, 
+#it must have been in response to a  messageId that included a quick-replies field.
 @post ('/message/<messageId>')
 def replyTo(messageId, dynamodb=None):
     if not dynamodb:
@@ -43,6 +46,8 @@ def replyTo(messageId, dynamodb=None):
             print(message)
         except:
             message = data['message']
+    else: 
+        message = data['message']
 
     try: 
         quickReplies = data['quickReplies']
@@ -56,64 +61,8 @@ def replyTo(messageId, dynamodb=None):
 
     return rs
     
-
 #listDirectMessagesFor(username)
-@get ('/message/<toUser>')
-def getDirectMessages(toUser):
-
-    messages = getMessages(toUser)
-   
-    rs.body = json.dumps(messages)
-    rs.set_header("Content-Type", "application/json")
-   
-    return rs
-
-
-#listRepliesTo(messageId)
-@get ('/message/id/<messageId>')
-def getRepliesTo(messageId):
-
-    replies = getMessagesId(messageId)
-    if replies == []:
-        rs.body = "There are no replies."
-    else:
-        rs.body = json.dumps(replies)
-        rs.set_header("Content-Type", "application/json")
-    
-    return rs
-    
-
-@post ('/message/<messageId>')
-def replyTo(messageId, dynamodb=None):
-    if not dynamodb:
-        dynamodb = boto3.resource('dynamodb', endpoint_url="http://localhost:8000")
-
-    table = dynamodb.Table('DirectMessages')
-    data = request.json
-       
-    #first get message details
-    response = table.get_item(Key={'messageId': messageId})
-    if len(response['Item']['quickReply']) > 0:
-        try:
-            message = response['Item']['quickReply'][int(data['message']) -1]
-            print(message)
-        except:
-            message = data['message']
-
-    try: 
-        quickReplies = data['quickReplies']
-    except: 
-        quickReplies = []
-
-    replyMessage(messageId, message, quickReplies)
-
-    
-    rs.status = 201 
-
-    return rs
-    
-
-#listDirectMessagesFor(username)
+#Lists the DMs that a user has received.
 @get ('/message/<toUser>')
 def getDirectMessages(toUser):
 
@@ -128,6 +77,7 @@ def getDirectMessages(toUser):
     return rs
 
 
+
 #listRepliesTo(messageId)
 @get ('/message/id/<messageId>')
 def getRepliesTo(messageId):
@@ -140,6 +90,14 @@ def getRepliesTo(messageId):
         rs.set_header("Content-Type", "application/json")
     
     return rs
+    
+
+
+
+
+
+
+
     
 
 ###############################################################################
