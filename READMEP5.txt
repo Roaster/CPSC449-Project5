@@ -1,6 +1,8 @@
 1. Initialize databases with users.sql and timelines.sql
     cat users.sql | sqlite3 users.db
     cat timelines.sql | sqlite3 timelines.db
+Initialize DynamboDB table schema and populate with sample data
+    python3 tablefill.py
 
 2. To start all services(users, timelines and directmessages) navigate to the correct directory then execute:
     foreman start -e settings.env -f Procfile -p 8080
@@ -48,7 +50,7 @@
     curl  -d '{"username":"Brandon"}' -H "Content-Type: application/JSON" -X POST "localhost:8180/Brandon/unfollow/" -i
 
     getUserTimeline(username)
-    curl -X GET "localhost:8081/timeline/Brandon/" -i
+    curl -X GET "localhost:8280/timeline/Brandon/" -i
 
     postTweet(username, text)
     curl  -d '{"username":"Brandon", "text":"My first post!"}' -H "Content-Type: application/JSON" -X POST "localhost:8280/post/new/" -i
