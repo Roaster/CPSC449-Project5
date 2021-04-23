@@ -58,3 +58,7 @@
 
     getPublicTimeline()
     curl -X GET "localhost:8280/timeline/" -i  
+    
+dynamodbjava -Djava.library.path=./DynamoDBLocal_lib -jar DynamoDBLocal.jar -sharedDb
+java
+curl
